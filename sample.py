@@ -1,35 +1,26 @@
-import numpy as np
-import tkinter as Tk
-from sklearn.metrics import jaccard_similarity_score
-import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow.examples.tutorials.mnist import input_data
+mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 
-def jaccard(x,y):
-    #集合表記 |A∧B|/|A∨B|
-    N=np.dot(x,y)
-    D=np.linalg.norm(x)+np.linalg.norm(y)-N
-    print(N/D)
+#回帰部分の実装
+x = tf.placeholder(tf.float32, [None, 784])#画像(784次元)
+W = tf.Variable(tf.zeros([784, 10]))#784次元に相当する重み生成,10種類の確率変数を生成(i)
+b = tf.Variable(tf.zeros([10]))#10種類の重みを生成(i)
+y = tf.nn.softmax(tf.matmul(x, W) + b)
 
-
-def dice():
-    '''
-    2|A∧B|/|A|+|B|
-    分母が共通要素を無視して足しているため分子に二倍
-    '''
-def simpson():
-    '''
-    |A∧B|/小さい方(|A|,|B|)
-    ただし、A∈Bのとき、simは1でもjacは1でないときがある。
-    真部分集合を考慮する必要性がある。
-    '''
+#訓練
+y_ = tf.placeholder(tf.float32, [None, 10])#交差エントロピー 関数
+cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
+train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)#勾配降下法
+sess = tf.InteractiveSession()#launch
+tf.global_variables_initializer().run()
+for i in range(1000):
+  print("looping:",i)
+  batch_xs, batch_ys = mnist.train.next_batch(250)
+  sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
 
 
-
-
-
-if __name__ == '__main__':
-    vec_a=np.array([0,1,0])
-    vec_b=np.array([0,1,0])
-    jaccard(vec_a,vec_b)
-    x = np.arange(-3, 3, 0.1)
-    y = np.sin(x)
-    plt.plot(x, y)
+#評価
+correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+print(sess.run(accuracy, feed_dict={x: mnist.test.images, y_: mnist.test.labels}))

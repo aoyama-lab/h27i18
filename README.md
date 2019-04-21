@@ -1,2 +1,2 @@
 # h27i18
-This is sample Project.co
+This is sample Project.
